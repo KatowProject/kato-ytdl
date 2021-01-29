@@ -1,7 +1,7 @@
 const router = require('express').Router();
 const ytdl = require('ytdl-core');
 const http = require('https');
-const ContentDisposition = require('content-disposition');
+const contentDisposition = require('content-disposition');
 
 router.get('/info/:id', async (req, res) => {
     try {
