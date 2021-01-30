@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const ytdl = require('ytdl-core');
 const http = require('https');
+const contentDisposition = require('content-disposition');
 
 router.get('/info/:id', async (req, res) => {
     try {
@@ -66,7 +67,7 @@ router.get('/download/:id/:type/:quality', async (req, res) => {
         
         http.get(video, (response) => {
 
-            res.writeHead(200, {"Content-disposition": `attachment; filename="${title}.${format}"`});
+            res.writeHead(200, {"Content-disposition": contentDisposition(`${title}.${format}`)});
             response.pipe(res);
 
         });
