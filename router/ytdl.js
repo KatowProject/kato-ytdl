@@ -2,32 +2,33 @@ const router = require('express').Router();
 const ytdl = require('ytdl-core');
 const http = require('https');
 const contentDisposition = require('content-disposition');
+const ytsearch = require('yt-search');
 
 router.get('/info/:id', async (req, res) => {
     try {
-    
+
         const URL = req.params.id;
         let info = await ytdl.getInfo(URL);
 
-        /* URl Information*/ 
+        /* URl Information*/
         let detail = info.player_response.videoDetails;
-  
-        /* Video with audio */ 
+
+        /* Video with audio */
         let vna = info.player_response.streamingData.formats;
-  
-        /* Video without audio & audio only */    
+
+        /* Video without audio & audio only */
         let data = info.player_response.streamingData.adaptiveFormats;
 
         /* Video without audio */
-        let video  = data.filter(a => a.mimeType === 'video/webm; codecs="vp9"');
+        let video = data.filter(a => a.mimeType === 'video/webm; codecs="vp9"');
 
         /* Audio only*/
         audio = data.filter(a => a.audioQuality === 'AUDIO_QUALITY_MEDIUM');
 
 
-        res.send({info: detail, video: vna, audioOnly: audio, videoOnly: video});
+        res.send({ info: detail, video: vna, audioOnly: audio, videoOnly: video });
     } catch (error) {
-        res.send({success: false, message: error.message});
+        res.send({ success: false, message: error.message });
     }
 });
 
@@ -35,14 +36,14 @@ router.get('/download/:id/:type/:quality', async (req, res) => {
 
     const URL = req.params.id;
     const type = req.params.type;
-    const quality = req.params.quality;   
-    
+    const quality = req.params.quality;
+
     try {
-    
+
         const data = await ytdl.getInfo(URL);
         let title = data.player_response.videoDetails.title;
         let videoList = data.player_response.streamingData.adaptiveFormats;
-    
+
         let video;
         let format;
         switch (type) {
@@ -50,32 +51,45 @@ router.get('/download/:id/:type/:quality', async (req, res) => {
             case 'audioOnly':
                 video = videoList.filter(a => a.audioQuality === 'AUDIO_QUALITY_MEDIUM').shift().url;
                 format = 'mp3';
-            break;
+                break;
 
             case 'videoOnly':
                 video = videoList.filter(a => a.mimeType === 'video/webm; codecs="vp9"').find(a => a.qualityLabel === quality).url;
                 format = 'mp4';
-            break;
+                break;
 
             default:
                 video = data.player_response.streamingData.formats.find(a => a.qualityLabel === quality).url;
                 format = 'mp4';
-            break;
-        
+                break;
+
         }
 
-        
+
         http.get(video, (response) => {
 
-            res.writeHead(200, {"Content-disposition": contentDisposition(`${title}.${format}`)});
+            res.writeHead(200, { "Content-disposition": contentDisposition(`${title}.${format}`) });
             response.pipe(res);
 
         });
 
     } catch (error) {
-        res.send(error.message);
+        res.send({ success: false, message: error.message });
     }
 
 });
+
+router.get('/search/:query', async (req, res, next) => {
+    try {
+
+        const query = req.params.query;
+        const datas = await ytsearch(query);
+
+        res.send(datas.videos);
+
+    } catch (error) {
+        res.send({ success: false, message: error.message });
+    }
+})
 
 module.exports = router;
